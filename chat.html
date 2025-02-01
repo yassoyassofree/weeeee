@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            display: flex;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            background-color: #333;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        #sidebar {
+            width: 200px;
+            background-color: #444;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        #sidebar.open {
+            width: 200px; /* Expanded sidebar width */
+        }
+        #sidebar .sidebar-toggle {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 50px;
+            background-color: #555;
+            cursor: pointer;
+        }
+        #menu {
+            display: none;
+            padding: 0;
+        }
+        #menu.open {
+            display: block; 
+        }
+        #menu ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        #menu li {
+            padding: 10px;
+            color: #fff;
+            cursor: pointer;
+        }
+        #menu li:hover {
+            background-color: #666;
+        }
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            margin-left: 20px; /* Space for sidebar */
+        }
+        .chat-box {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            border-bottom: 1px solid #ccc;
+            background-color: #fff;
+        }
+        .input-box {
+            padding: 10px;
+            display: flex;
+            align-items: center;
+        }
+        .input-box input[type="text"] {
+            width: 80%;
+            padding: 10px;
+            margin-right: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        .input-box button {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        .input-box button:hover {
+            background-color: #3e8e41;
+        }
+        .message {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 5px;
+            border-radius: 5px;
+        }
+        .username {
+            font-weight: bold;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <div class="sidebar-toggle" aria-label="Toggle Sidebar">
+            <i class="fa-solid fa-ellipsis-vertical"></i>
+        </div>
+        <div class="menu" id="menu">
+            <ul>
+                <li onclick="cheats()">Cheats</li>
+                <li onclick="unblockers()">Unblockers</li>
+            </ul>
+        </div>
+    </div>
+    <div class="container">
+        <div class="chat-box" id="chatBox">
+            <!-- Messages will be displayed here -->
+        </div>
+        <div class="input-box">
+            <input type="text" id="messageInput" placeholder="Type your message here">
+            <button id="sendBtn">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const toggleBtn = document.querySelector('.sidebar-toggle');
+        const sidebar = document.getElementById('sidebar');
+        const menu = document.getElementById('menu');
+
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            menu.classList.toggle('open'); // Show/hide the menu when the icon is clicked
+        });
+
+        // Handle opening different sections
+        function cheats() {
+            window.location.href = "cheats.html"; // Redirect to "cheats" page
+        }
+
+        function unblockers() {
+            window.location.href = "unblockers.html"; // Redirect to "unblockers" page
+        }
+        
+        // Retrieve username from local storage
+        const username = localStorage.getItem('username') || 'Guest';
+
+        // Function to send a message
+        const sendMessage = function() {
+            const messageInput = document.getElementById('messageInput');
+            const chatBox = document.getElementById('chatBox');
+
+            const message = messageInput.value.trim();
+            if (message !== '') {
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('message');
+                messageElement.innerHTML = `<span class="username">${username}</span>: ${message}`;
+
+                chatBox.appendChild(messageElement);
+                messageInput.value = ''; // Clear input
+                chatBox.scrollTop = chatBox.scrollHeight; // Scroll to bottom
+            }
+        };
+
+        document.getElementById('sendBtn').addEventListener('click', sendMessage);
+        document.getElementById('messageInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+
+</body>
+</html>
