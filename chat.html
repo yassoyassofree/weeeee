@@ -144,21 +144,44 @@
         function unblockers() {
             window.location.href = "unblockers.html"; // Redirect to "unblockers" page
         }
-        
+
         // Retrieve username from local storage
         const username = localStorage.getItem('username') || 'Guest';
+
+        // Load previously saved messages
+        function loadMessages() {
+            const savedMessages = JSON.parse(localStorage.getItem('messages')) || [];
+            const chatBox = document.getElementById('chatBox');
+            savedMessages.forEach(msg => {
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('message');
+                messageElement.innerHTML = `<span class="username">${msg.username}</span>: ${msg.text}`;
+                chatBox.appendChild(messageElement);
+            });
+            chatBox.scrollTop = chatBox.scrollHeight; // Scroll to bottom after loading messages
+        }
 
         // Function to send a message
         const sendMessage = function() {
             const messageInput = document.getElementById('messageInput');
             const chatBox = document.getElementById('chatBox');
-
             const message = messageInput.value.trim();
             if (message !== '') {
+                // Create message object
+                const messageObject = {
+                    username: username,
+                    text: message,
+                };
+
+                // Save message to local storage
+                const savedMessages = JSON.parse(localStorage.getItem('messages')) || [];
+                savedMessages.push(messageObject);
+                localStorage.setItem('messages', JSON.stringify(savedMessages));
+
+                // Display the message
                 const messageElement = document.createElement('div');
                 messageElement.classList.add('message');
                 messageElement.innerHTML = `<span class="username">${username}</span>: ${message}`;
-
                 chatBox.appendChild(messageElement);
                 messageInput.value = ''; // Clear input
                 chatBox.scrollTop = chatBox.scrollHeight; // Scroll to bottom
@@ -171,6 +194,9 @@
                 sendMessage();
             }
         });
+
+        // Load messages when the page loads
+        window.onload = loadMessages;
     </script>
 
 </body>
