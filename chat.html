@@ -60,6 +60,7 @@
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
             margin-left: 20px; /* Space for sidebar */
+            position: relative;
         }
         .chat-box {
             flex: 1;
@@ -74,13 +75,17 @@
             align-items: center;
         }
         .input-box input[type="text"] {
-            width: 80%;
+            width: 60%;
             padding: 10px;
             margin-right: 10px;
             border-radius: 5px;
             border: 1px solid #ccc;
         }
-        .input-box button {
+        .input-box button,
+        .input-box .microphone-btn,
+        .input-box .camera-btn,
+        .input-box .upload-btn,
+        .input-box .video-btn {
             padding: 10px;
             border: none;
             border-radius: 5px;
@@ -88,7 +93,11 @@
             color: white;
             cursor: pointer;
         }
-        .input-box button:hover {
+        .input-box button:hover,
+        .input-box .microphone-btn:hover,
+        .input-box .camera-btn:hover,
+        .input-box .upload-btn:hover,
+        .input-box .video-btn:hover {
             background-color: #3e8e41;
         }
         .message {
@@ -101,6 +110,37 @@
         .username {
             font-weight: bold;
             color: #666;
+        }
+        .video-container, .image-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: red;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            padding: 5px;
+            cursor: pointer;
+        }
+        video {
+            width: 100%;
+            height: auto;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+        .settings-icon {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #555;
+            font-size: 24px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -117,12 +157,18 @@
         </div>
     </div>
     <div class="container">
+        <a href="settings.html" class="settings-icon"><i class="fa-solid fa-gear"></i></a> <!-- Settings Icon -->
         <div class="chat-box" id="chatBox">
             <!-- Messages will be displayed here -->
         </div>
         <div class="input-box">
             <input type="text" id="messageInput" placeholder="Type your message here">
             <button id="sendBtn">Send</button>
+            <button id="recordBtn" class="microphone-btn"><i class="fa-solid fa-microphone"></i></button>
+            <button id="cameraBtn" class="camera-btn"><i class="fa-solid fa-camera"></i></button>
+            <button id="videoBtn" class="video-btn">Capture Video</button>
+            <input type="file" id="fileInput" class="upload-btn" style="display: none;">
+            <label for="fileInput" class="upload-btn"><i class="fa-solid fa-arrow-up-from-bracket"></i></label>
         </div>
     </div>
 
@@ -136,7 +182,6 @@
             menu.classList.toggle('open'); // Show/hide the menu when the icon is clicked
         });
 
-        // Handle opening different sections
         function cheats() {
             window.location.href = "cheats.html"; // Redirect to "cheats" page
         }
@@ -145,57 +190,273 @@
             window.location.href = "unblockers.html"; // Redirect to "unblockers" page
         }
 
-        // Retrieve username from local storage
         const username = localStorage.getItem('username') || 'Guest';
 
-        // Load previously saved messages
         function loadMessages() {
             const savedMessages = JSON.parse(localStorage.getItem('messages')) || [];
             const chatBox = document.getElementById('chatBox');
             savedMessages.forEach(msg => {
                 const messageElement = document.createElement('div');
                 messageElement.classList.add('message');
-                messageElement.innerHTML = `<span class="username">${msg.username}</span>: ${msg.text}`;
+                
+                if (msg.videoUrl) {
+                    messageElement.innerHTML = `<span class="username">${msg.username}</span>: <video controls><source src="${msg.videoUrl}" type="video/webm">Your browser does not support the video element.</video>`;
+                } else if (msg.pictureUrl) {
+                    messageElement.innerHTML = `<span class="username">${msg.username}</span>: <img src="${msg.pictureUrl}" style="max-width: 100%; height: auto;"/>`;
+                } else if (msg.audioUrl) {
+                    messageElement.innerHTML = `<span class="username">${msg.username}</span>: <audio controls><source src="${msg.audioUrl}" type="audio/ogg">Your browser does not support the audio element.</audio>`;
+                } else if (msg.fileUrl) {
+                    messageElement.innerHTML = `<span class="username">${msg.username}</span>: <a href="${msg.fileUrl}" target="_blank">File: ${msg.fileName}</a>`;
+                } else {
+                    messageElement.innerHTML = `<span class="username">${msg.username}</span>: ${msg.text}`;
+                }
+
                 chatBox.appendChild(messageElement);
             });
             chatBox.scrollTop = chatBox.scrollHeight; // Scroll to bottom after loading messages
         }
 
-        // Function to send a message
-        const sendMessage = function() {
-            const messageInput = document.getElementById('messageInput');
+        const sendMessage = function(message) {
             const chatBox = document.getElementById('chatBox');
-            const message = messageInput.value.trim();
-            if (message !== '') {
-                // Create message object
+            if (message) {
                 const messageObject = {
                     username: username,
                     text: message,
                 };
 
-                // Save message to local storage
                 const savedMessages = JSON.parse(localStorage.getItem('messages')) || [];
                 savedMessages.push(messageObject);
                 localStorage.setItem('messages', JSON.stringify(savedMessages));
 
-                // Display the message
                 const messageElement = document.createElement('div');
                 messageElement.classList.add('message');
                 messageElement.innerHTML = `<span class="username">${username}</span>: ${message}`;
                 chatBox.appendChild(messageElement);
-                messageInput.value = ''; // Clear input
                 chatBox.scrollTop = chatBox.scrollHeight; // Scroll to bottom
             }
         };
 
-        document.getElementById('sendBtn').addEventListener('click', sendMessage);
+        document.getElementById('sendBtn').addEventListener('click', () => {
+            const messageInput = document.getElementById('messageInput');
+            sendMessage(messageInput.value.trim());
+            messageInput.value = ''; // Clear input
+        });
+
         document.getElementById('messageInput').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
-                sendMessage();
+                const messageInput = document.getElementById('messageInput');
+                sendMessage(messageInput.value.trim());
+                messageInput.value = ''; // Clear input
             }
         });
 
-        // Load messages when the page loads
+        // Voice Recording Logic
+        let mediaRecorder;
+        const recordBtn = document.getElementById('recordBtn');
+        const audioChunks = [];
+
+        recordBtn.addEventListener('click', async () => {
+            if (!mediaRecorder) {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/ogg; codecs=opus' });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    audioChunks.length = 0; // Reset the chunks
+
+                    // Save the audio message
+                    const messageObject = {
+                        username: username,
+                        text: 'Audio message',
+                        audioUrl: audioUrl
+                    };
+                    const savedMessages = JSON.parse(localStorage.getItem('messages')) || [];
+                    savedMessages.push(messageObject);
+                    localStorage.setItem('messages', JSON.stringify(savedMessages));
+
+                    const messageElement = document.createElement('div');
+                    messageElement.classList.add('message');
+                    messageElement.innerHTML = `<span class="username">${username}</span>: <audio controls><source src="${audioUrl}" type="audio/ogg">Your browser does not support the audio element.</audio>`;
+                    document.getElementById('chatBox').appendChild(messageElement);
+                };
+
+                mediaRecorder.start();
+                recordBtn.classList.add('recording');
+                recordBtn.innerHTML = '<i class="fa-solid fa-stop"></i>'; // Change to Stop icon
+            } else {
+                mediaRecorder.stop();
+                recordBtn.classList.remove('recording');
+                recordBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>'; // Change back to Mic icon
+                mediaRecorder = null; // Reset mediaRecorder
+            }
+        });
+
+        // Camera Logic
+        const cameraBtn = document.getElementById('cameraBtn');
+        let cameraStream;
+        let videoElement;
+        let videoRecorder;
+        let recordedChunks = [];
+
+        cameraBtn.addEventListener('click', async () => {
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                videoElement = document.createElement('video');
+                videoElement.srcObject = cameraStream;
+                videoElement.play();
+                document.body.appendChild(videoElement); // Show the video stream
+
+                // Create a capture picture button
+                const captureBtn = document.createElement('button');
+                captureBtn.textContent = 'Capture Picture';
+                document.body.appendChild(captureBtn); 
+
+                // Capture Video Picture
+                captureBtn.addEventListener('click', () => {
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.width = videoElement.videoWidth;
+                    canvas.height = videoElement.videoHeight;
+                    context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                    const pictureDataUrl = canvas.toDataURL('image/png');
+                    
+                    // Display picture with close button
+                    displayCapturedImage(pictureDataUrl);
+
+                    // Stop the camera
+                    stopCamera();
+                });
+
+                // Allow the user to record a video
+                const recordVideoBtn = document.createElement('button');
+                recordVideoBtn.textContent = 'Record Video';
+                document.body.appendChild(recordVideoBtn); 
+
+                recordVideoBtn.addEventListener('click', async () => {
+                    if (!videoRecorder) {
+                        recordedChunks = [];
+                        videoRecorder = new MediaRecorder(cameraStream);
+                        
+                        videoRecorder.ondataavailable = event => {
+                            if (event.data.size > 0) {
+                                recordedChunks.push(event.data);
+                            }
+                        };
+
+                        videoRecorder.onstop = async () => {
+                            const videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
+                            const videoUrl = URL.createObjectURL(videoBlob);
+                            
+                            // Save the video message
+                            const messageObject = {
+                                username: username,
+                                videoUrl: videoUrl
+                            };
+                            const savedMessages = JSON.parse(localStorage.getItem('messages')) || [];
+                            savedMessages.push(messageObject);
+                            localStorage.setItem('messages', JSON.stringify(savedMessages));
+
+                            const messageElement = document.createElement('div');
+                            messageElement.classList.add('message');
+                            messageElement.innerHTML = `<span class="username">${username}</span>: <video controls><source src="${videoUrl}" type="video/webm">Your browser does not support the video element.</video>`;
+                            document.getElementById('chatBox').appendChild(messageElement);
+                        };
+
+                        videoRecorder.start();
+                        recordVideoBtn.innerHTML = 'Stop Recording';
+                    } else {
+                        videoRecorder.stop();
+                        recordVideoBtn.innerHTML = 'Record Video';
+                        videoRecorder = null; // Reset videoRecorder
+                    }
+                });
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+            }
+        });
+
+        function displayCapturedImage(imageSrc) {
+            const imageContainer = document.createElement('div');
+            imageContainer.classList.add('image-container');
+
+            const imageElement = document.createElement('img');
+            imageElement.src = imageSrc;
+
+            const closeButton = document.createElement('button');
+            closeButton.classList.add('close-btn');
+            closeButton.innerHTML = 'X';
+            closeButton.onclick = () => {
+                imageContainer.remove(); // Remove image from DOM
+            };
+
+            imageContainer.appendChild(closeButton);
+            imageContainer.appendChild(imageElement);
+            document.body.appendChild(imageContainer);
+            
+            const sendButton = document.createElement('button');
+            sendButton.textContent = 'Send Picture';
+            sendButton.onclick = () => {
+                const messageObject = {
+                    username: username,
+                    pictureUrl: imageSrc
+                };
+                const savedMessages = JSON.parse(localStorage.getItem('messages')) || [];
+                savedMessages.push(messageObject);
+                localStorage.setItem('messages', JSON.stringify(savedMessages));
+
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('message');
+                messageElement.innerHTML = `<span class="username">${username}</span>: <img src="${imageSrc}" style="max-width: 100%; height: auto;"/>`;
+                document.getElementById('chatBox').appendChild(messageElement);
+                
+                imageContainer.remove(); // Remove image after sending
+            };
+            imageContainer.appendChild(sendButton);
+        }
+
+        function stopCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop()); // Stop all tracks
+                cameraStream = null; // Reset cameraStream
+                if (videoElement) {
+                    videoElement.remove(); // Remove video element from DOM
+                    videoElement = null; // Reset video element
+                }
+            }
+        }
+
+        // File Upload Logic
+        const fileInput = document.getElementById('fileInput');
+
+        fileInput.addEventListener('change', function() {
+            const files = fileInput.files;
+            if (files.length > 0) {
+                const file = files[0];
+                const fileUrl = URL.createObjectURL(file);
+
+                const messageObject = {
+                    username: username,
+                    fileName: file.name,
+                    fileUrl: fileUrl
+                };
+
+                const savedMessages = JSON.parse(localStorage.getItem('messages')) || [];
+                savedMessages.push(messageObject);
+                localStorage.setItem('messages', JSON.stringify(savedMessages));
+
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('message');
+                messageElement.innerHTML = `<span class="username">${username}</span>: <a href="${fileUrl}" target="_blank">File: ${file.name}</a>`;
+                document.getElementById('chatBox').appendChild(messageElement);
+            }
+            fileInput.value = ''; // Clear the file input
+        });
+
         window.onload = loadMessages;
     </script>
 
